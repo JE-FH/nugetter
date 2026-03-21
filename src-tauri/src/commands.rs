@@ -1,6 +1,8 @@
-use crate::models::WatchSettings;
+use crate::models::{LocalPackageInfo, WatchSettings};
 use crate::nuget;
 use crate::state::AppState;
+use crate::ui_events;
+use semver::Version;
 use crate::watcher;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -36,11 +38,16 @@ pub fn save_settings(
 pub fn process_copy_request(
     request_id: String,
     approved: bool,
+    app: AppHandle,
     state: State<'_, AppState>,
 ) -> Result<String, String> {
     let Some(request) = state.take_pending_request(&request_id)? else {
         return Err("Request not found. It may have already been handled.".to_string());
     };
+
+    let pending_count = state.pending_request_count()?;
+    let unacknowledged_count = state.unacknowledged_update_count()?;
+    ui_events::update_tray_pending_indicator(&app, pending_count, unacknowledged_count, None);
 
     if !approved {
         return Ok("Copy request declined.".to_string());
@@ -60,6 +67,15 @@ pub fn get_settings(state: State<'_, AppState>) -> Result<Option<WatchSettings>,
     state.settings()
 }
 
+#[tauri::command]
+pub fn get_local_packages(state: State<'_, AppState>) -> Result<Vec<LocalPackageInfo>, String> {
+    let Some(settings) = state.settings()? else {
+        return Ok(Vec::new());
+    };
+
+    nuget::list_local_packages(Path::new(&settings.destination_path))
+}
+
 fn validate_paths(settings: &WatchSettings) -> Result<(), String> {
     let watch = Path::new(&settings.watch_path);
     if !watch.exists() || !watch.is_dir() {
@@ -73,6 +89,12 @@ fn validate_paths(settings: &WatchSettings) -> Result<(), String> {
     }
     if !destination.is_dir() {
         return Err("Destination path must be a directory.".to_string());
+    }
+
+    if let Some(start_version) = &settings.start_version {
+        if Version::parse(start_version).is_err() {
+            return Err("Start version must be a valid semantic version (for example 1.0.0).".to_string());
+        }
     }
 
     Ok(())

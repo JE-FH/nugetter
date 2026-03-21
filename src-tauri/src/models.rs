@@ -6,6 +6,8 @@ use std::path::PathBuf;
 pub struct WatchSettings {
     pub watch_path: String,
     pub destination_path: String,
+    #[serde(default)]
+    pub start_version: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -28,4 +30,11 @@ pub struct PendingCopyRequest {
     pub package_id: String,
     pub next_version: String,
     pub destination_file_name: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LocalPackageInfo {
+    pub package_id: String,
+    pub latest_version: String,
 }
