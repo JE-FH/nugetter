@@ -1,3 +1,5 @@
+#![cfg_attr(test, allow(dead_code, unused_imports))]
+
 mod commands;
 mod models;
 mod nuget;
@@ -7,6 +9,7 @@ mod watcher;
 
 use state::AppState;
 
+#[cfg(not(test))]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -19,4 +22,9 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+pub fn run() {
+    // Unit tests compile backend logic without launching the Tauri runtime.
 }
