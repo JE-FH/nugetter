@@ -308,7 +308,13 @@ fn handle_detected_package(
 ) -> Result<(), String> {
     debug_log(format!("reading package metadata for {}", source_path.display()));
     let (package_id, current_version) = nuget::read_package_metadata(source_path)?;
-    let next_version = nuget::compute_next_version(destination_path, &package_id, &current_version);
+    let configured_start_version = state.settings()?.and_then(|settings| settings.start_version);
+    let next_version = nuget::compute_next_version(
+        destination_path,
+        &package_id,
+        &current_version,
+        configured_start_version.as_deref(),
+    );
     let destination_file_name = format!("{}.{}.nupkg", package_id, next_version);
     let request_id = REQUEST_COUNTER.fetch_add(1, Ordering::Relaxed).to_string();
 
@@ -322,6 +328,15 @@ fn handle_detected_package(
     };
 
     state.insert_pending_request(request)?;
+    let pending_count = state.pending_request_count()?;
+    let unacknowledged_count = state.increment_unacknowledged_updates()?;
+    let latest_hint = format!("{} -> {}", package_id, next_version);
+    ui_events::update_tray_pending_indicator(
+        app,
+        pending_count,
+        unacknowledged_count,
+        Some(&latest_hint),
+    );
 
     debug_log(format!(
         "detected package {} current={} next={} source={} target={} ",

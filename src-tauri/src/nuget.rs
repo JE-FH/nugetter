@@ -1,6 +1,7 @@
-use crate::models::PendingCopyRequest;
+use crate::models::{LocalPackageInfo, PendingCopyRequest};
 use regex::Regex;
 use semver::Version;
+use std::collections::HashMap;
 use std::fs;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -59,25 +60,107 @@ pub fn read_package_metadata(path: &Path) -> Result<(String, String), String> {
     Ok((package_id, version))
 }
 
-pub fn compute_next_version(destination_path: &Path, package_id: &str, current_version: &str) -> String {
+pub fn compute_next_version(
+    destination_path: &Path,
+    package_id: &str,
+    current_version: &str,
+    configured_start_version: Option<&str>,
+) -> String {
     let highest_in_destination = highest_version_in_destination(destination_path, package_id);
-    next_version_from_known_versions(current_version, highest_in_destination)
+    next_version_from_known_versions(current_version, highest_in_destination, configured_start_version)
 }
 
-fn next_version_from_known_versions(current_version: &str, highest_in_destination: Option<Version>) -> String {
-    let current_parsed = Version::parse(current_version).ok();
+pub fn list_local_packages(destination_path: &Path) -> Result<Vec<LocalPackageInfo>, String> {
+    if !destination_path.exists() || !destination_path.is_dir() {
+        return Ok(Vec::new());
+    }
 
-    let mut base = match (current_parsed, highest_in_destination) {
-        (Some(current), Some(highest)) => {
-            if current > highest {
+    let entries = fs::read_dir(destination_path)
+        .map_err(|e| format!("Failed to read destination {}: {e}", destination_path.display()))?;
+
+    let mut by_package: HashMap<String, String> = HashMap::new();
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !is_package_file(&path) || !path.is_file() {
+            continue;
+        }
+
+        let Ok((package_id, version)) = read_package_metadata(&path) else {
+            continue;
+        };
+
+        match by_package.get(&package_id) {
+            Some(existing) if !is_version_higher(&version, existing) => {}
+            _ => {
+                by_package.insert(package_id, version);
+            }
+        }
+    }
+
+    let mut packages: Vec<LocalPackageInfo> = by_package
+        .into_iter()
+        .map(|(package_id, latest_version)| LocalPackageInfo {
+            package_id,
+            latest_version,
+        })
+        .collect();
+    packages.sort_by(|a, b| a.package_id.cmp(&b.package_id));
+
+    Ok(packages)
+}
+
+fn is_version_higher(candidate: &str, existing: &str) -> bool {
+    match (Version::parse(candidate), Version::parse(existing)) {
+        (Ok(left), Ok(right)) => left > right,
+        _ => candidate > existing,
+    }
+}
+
+fn next_version_from_known_versions(
+    current_version: &str,
+    highest_in_destination: Option<Version>,
+    configured_start_version: Option<&str>,
+) -> String {
+    let current_parsed = Version::parse(current_version).ok();
+    let start_parsed = configured_start_version.and_then(|v| Version::parse(v).ok());
+
+    if highest_in_destination.is_none() {
+        if let Some(start) = start_parsed {
+            let selected = match current_parsed {
+                Some(current) if current > start => current,
+                _ => start,
+            };
+            return selected.to_string();
+        }
+    }
+
+    let mut base = match (current_parsed, highest_in_destination, start_parsed) {
+        (Some(current), Some(highest), maybe_start) => {
+            let mut candidate = if current > highest { current } else { highest };
+            if let Some(start) = maybe_start {
+                if start > candidate {
+                    candidate = start;
+                }
+            }
+            candidate
+        }
+        (Some(current), None, Some(start)) => {
+            if start > current {
+                start
+            } else {
                 current
+            }
+        }
+        (Some(current), None, None) => current,
+        (None, Some(highest), Some(start)) => {
+            if start > highest {
+                start
             } else {
                 highest
             }
         }
-        (Some(current), None) => current,
-        (None, Some(highest)) => highest,
-        (None, None) => return format!("{}.1", current_version),
+        (None, Some(highest), None) => highest,
+        (None, None, _) => return format!("{}.1", current_version),
     };
 
     base.patch += 1;
@@ -204,18 +287,35 @@ mod tests {
 
     #[test]
     fn bumps_patch_when_no_destination_versions() {
-        assert_eq!(next_version_from_known_versions("1.2.3", None), "1.2.4");
+        assert_eq!(next_version_from_known_versions("1.2.3", None, None), "1.2.4");
     }
 
     #[test]
     fn bumps_above_highest_destination_version() {
         let highest = Version::parse("1.2.9").ok();
-        assert_eq!(next_version_from_known_versions("1.2.3", highest), "1.2.10");
+        assert_eq!(next_version_from_known_versions("1.2.3", highest, None), "1.2.10");
     }
 
     #[test]
     fn handles_non_semver_fallback() {
-        assert_eq!(next_version_from_known_versions("custom", None), "custom.1");
+        assert_eq!(next_version_from_known_versions("custom", None, None), "custom.1");
+    }
+
+    #[test]
+    fn starts_from_configured_version_for_first_local_copy() {
+        assert_eq!(
+            next_version_from_known_versions("1.2.3", None, Some("2.0.0")),
+            "2.0.0"
+        );
+    }
+
+    #[test]
+    fn still_increments_when_existing_local_versions_present() {
+        let highest = Version::parse("2.0.5").ok();
+        assert_eq!(
+            next_version_from_known_versions("1.2.3", highest, Some("2.0.0")),
+            "2.0.6"
+        );
     }
 
     #[test]

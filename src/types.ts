@@ -1,6 +1,7 @@
 export type WatchSettings = {
   watchPath: string;
   destinationPath: string;
+  startVersion?: string;
 };
 
 export type PromptPayload = {
@@ -11,4 +12,9 @@ export type PromptPayload = {
   nextVersion: string;
   destinationPath: string;
   destinationFileName: string;
+};
+
+export type LocalPackageInfo = {
+  packageId: string;
+  latestVersion: string;
 };

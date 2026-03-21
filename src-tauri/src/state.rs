@@ -19,6 +19,7 @@ impl Default for AppState {
 struct AppStateInner {
     settings: Option<WatchSettings>,
     pending_requests: HashMap<String, PendingCopyRequest>,
+    unacknowledged_updates: usize,
     stop_sender: Option<mpsc::Sender<()>>,
 }
 
@@ -53,5 +54,27 @@ impl AppState {
     pub fn take_pending_request(&self, request_id: &str) -> Result<Option<PendingCopyRequest>, String> {
         let mut inner = self.inner.lock().map_err(|_| "State lock poisoned")?;
         Ok(inner.pending_requests.remove(request_id))
+    }
+
+    pub fn pending_request_count(&self) -> Result<usize, String> {
+        let inner = self.inner.lock().map_err(|_| "State lock poisoned")?;
+        Ok(inner.pending_requests.len())
+    }
+
+    pub fn increment_unacknowledged_updates(&self) -> Result<usize, String> {
+        let mut inner = self.inner.lock().map_err(|_| "State lock poisoned")?;
+        inner.unacknowledged_updates = inner.unacknowledged_updates.saturating_add(1);
+        Ok(inner.unacknowledged_updates)
+    }
+
+    pub fn reset_unacknowledged_updates(&self) -> Result<(), String> {
+        let mut inner = self.inner.lock().map_err(|_| "State lock poisoned")?;
+        inner.unacknowledged_updates = 0;
+        Ok(())
+    }
+
+    pub fn unacknowledged_update_count(&self) -> Result<usize, String> {
+        let inner = self.inner.lock().map_err(|_| "State lock poisoned")?;
+        Ok(inner.unacknowledged_updates)
     }
 }
