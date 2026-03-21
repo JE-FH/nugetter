@@ -63,9 +63,6 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
-      - name: Generate app icons from SVG
-        run: npm run generate:icons
-
       - name: Build Tauri bundle
         run: npm run tauri -- build
 

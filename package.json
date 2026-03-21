@@ -11,7 +11,9 @@
     "lint": "biome lint .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
-    "build": "npm run generate:icons && tsc && vite build",
+    "build:web": "tsc && vite build",
+    "tauri:before-build": "npm run generate:icons && npm run build:web",
+    "build": "npm run build:web",
     "preview": "vite preview",
     "tauri": "tauri"
   },
