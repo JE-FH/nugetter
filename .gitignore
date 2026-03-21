@@ -23,6 +23,4 @@ dist-ssr
 *.sln
 *.sw?
 
-# Generated app icons (recreated from src-tauri/icons/logo.svg)
-src-tauri/icons/*
-!src-tauri/icons/logo.svg
+src-tauri/icons/

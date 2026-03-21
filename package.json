@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "generate:icons": "tauri icon src-tauri/icons/logo.svg -o src-tauri/icons",
+    "generate:icons": "tauri icon logo.svg",
     "apply:tag-version": "node .github/workflows/apply-tag-version.mjs",
     "check": "biome check .",
     "lint": "biome lint .",
