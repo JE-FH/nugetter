@@ -2370,7 +2370,7 @@ dependencies = [
 
 [[package]]
 name = "nugetter"
-version = "0.1.0"
+version = "999.0.0-localbuild"
 dependencies = [
  "notify",
  "regex",
