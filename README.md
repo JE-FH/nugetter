@@ -4,6 +4,8 @@ Nugetter is a desktop app (Tauri + React + TypeScript + Rust) that automates a l
 
 It watches a root folder containing one or more C# projects, detects newly built package files, asks for approval, bumps the package version above the latest in your local feed, and copies the updated package there.
 
+![Nugetter UI Preview](.github/preview.png)
+
 ## Features
 
 - Watches a project root recursively (multi-project support).
