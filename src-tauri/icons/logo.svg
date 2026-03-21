@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="Nugetter logo">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#17363d" />
+      <stop offset="100%" stop-color="#2a6a66" />
+    </linearGradient>
+    <linearGradient id="core" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffd089" />
+      <stop offset="100%" stop-color="#e0812f" />
+    </linearGradient>
+  </defs>
+
+  <rect x="56" y="56" width="912" height="912" rx="208" fill="url(#bg)" />
+
+  <rect x="172" y="172" width="680" height="680" rx="126" fill="#0f252a" opacity="0.34" />
+
+  <path d="M286 742V282h104l252 300V282h96v460H632L382 440v302z" fill="url(#core)" />
+
+  <path d="M744 748c-86 0-130-48-130-132 0-80 44-130 134-130h86v80h-82c-24 0-38 14-38 42 0 26 13 40 40 40h80v100z" fill="#f7f2ea" opacity="0.95" />
+
+  <rect x="286" y="752" width="548" height="44" rx="22" fill="#f7f2ea" opacity="0.82" />
+</svg>
