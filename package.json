@@ -1,11 +1,12 @@
 {
   "name": "nugetter",
   "private": true,
-  "version": "0.1.0",
+  "version": "999.0.0-localbuild",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "generate:icons": "tauri icon src-tauri/icons/logo.svg -o src-tauri/icons",
+    "apply:tag-version": "node .github/workflows/apply-tag-version.mjs",
     "check": "biome check .",
     "lint": "biome lint .",
     "lint:fix": "biome check --write .",
