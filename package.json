@@ -6,6 +6,10 @@
   "scripts": {
     "dev": "vite",
     "generate:icons": "tauri icon src-tauri/icons/logo.svg -o src-tauri/icons",
+    "check": "biome check .",
+    "lint": "biome lint .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
     "build": "npm run generate:icons && tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri"

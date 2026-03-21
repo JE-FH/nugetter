@@ -1,7 +1,7 @@
 import './style.css';
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { DetectedPackageCard } from './components/DetectedPackageCard';
 import { SettingsCard } from './components/SettingsCard';
 import { BACKEND_COMMANDS, STORAGE_SETTINGS_KEY, WATCHER_EVENTS } from './constants';
@@ -16,10 +16,10 @@ function App() {
   const [isHandlingPrompt, setIsHandlingPrompt] = useState(false);
   const [promptQueue, setPromptQueue] = useState<PromptPayload[]>([]);
 
-  const applySettings = (settings: Partial<WatchSettings>) => {
+  const applySettings = useCallback((settings: Partial<WatchSettings>) => {
     setWatchPath(settings.watchPath ?? '');
     setDestinationPath(settings.destinationPath ?? '');
-  };
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_SETTINGS_KEY);
@@ -42,7 +42,7 @@ function App() {
       .catch(() => {
         // Ignore backend state load failures on startup.
       });
-  }, []);
+  }, [applySettings]);
 
   useEffect(() => {
     let unlistenDetected: null | (() => void) = null;
