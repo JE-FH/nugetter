@@ -1,7 +1,7 @@
 {
   "name": "nugetter",
   "private": true,
-  "version": "999.0.0-localbuild",
+  "version": "999.0.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
